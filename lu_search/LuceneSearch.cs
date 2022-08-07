@@ -16,11 +16,11 @@ namespace lu_search
     public static class LuceneSearch
     {
         public static string _luceneDir =
-        Path.Combine(HttpContext.Current.Request.PhysicalApplicationPath, "lucene_index");
-
-        private static FSDirectory _directoryTemp;
+        Path.Combine(Environment.CurrentDirectory, "lucene_index");
+        public static FSDirectory _directoryTemp;
         private static FSDirectory _directory
         {
+
             get
             {
                 if (_directoryTemp == null)
@@ -47,7 +47,7 @@ namespace lu_search
             // add lucene fields mapped to db fields
             doc.Add(new Field("Id", student.Id.ToString(), Field.Store.YES, Field.Index.NOT_ANALYZED));
             doc.Add(new Field("Name", student.Name, Field.Store.YES, Field.Index.ANALYZED));
-            doc.Add(new Field("Description", student.Address, Field.Store.YES, Field.Index.ANALYZED));
+            doc.Add(new Field("Address", student.Address, Field.Store.YES, Field.Index.ANALYZED));
 
             // add entry to index
             writer.AddDocument(doc);
@@ -162,9 +162,9 @@ namespace lu_search
         {
             // validation
             if (string.IsNullOrEmpty(searchQuery.Replace("*", "").Replace("?", ""))) return new List<Student>();
-
+  
             // set up lucene searcher
-            using (var searcher = new IndexSearcher(_directory, false))
+            using (IndexSearcher searcher = new IndexSearcher(_directory, false))
             {
                 var hits_limit = 1000;
                 var analyzer = new StandardAnalyzer(Lucene.Net.Util.Version.LUCENE_30);

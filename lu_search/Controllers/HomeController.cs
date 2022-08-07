@@ -16,7 +16,10 @@ namespace lu_search.Controllers
         public ActionResult Index(string searchTerm, string searchField, bool? searchDefault, int? limit)
         {
             // create default Lucene search index directory
-            if (!Directory.Exists(LuceneSearch._luceneDir)) Directory.CreateDirectory(LuceneSearch._luceneDir);
+            if (!Directory.Exists(LuceneSearch._luceneDir))
+            { 
+                Directory.CreateDirectory(LuceneSearch._luceneDir); 
+            }
 
             // perform Lucene search
             List<Student> _searchResults;
@@ -58,8 +61,6 @@ namespace lu_search.Controllers
                 student = new Student { Id = 9, Name = "KKR", Address = "City in Texas" },
                 SearchFieldList = search_field_list,
             });
-
-
         }
 
         public ActionResult Search(string searchTerm, string searchField, string searchDefault)
@@ -69,18 +70,35 @@ namespace lu_search.Controllers
 
 
 
-        public ActionResult About()
+        [HttpPost]
+        public ActionResult AddToIndex(Student student)
         {
-            ViewBag.Message = "Your application description page.";
-
-            return View();
+            LuceneSearch.AddUpdateLuceneIndex(student);
+            TempData["Result"] = "Record was added to search index successfully!";
+            return RedirectToAction("Index");
         }
 
-        public ActionResult Contact()
+        public ActionResult ClearIndex()
         {
-            ViewBag.Message = "Your contact page.";
+            if (LuceneSearch.ClearLuceneIndex())
+                TempData["Result"] = "Search index was cleared successfully!";
+            else
+                TempData["ResultFail"] = "Index is locked and cannot be cleared, try again later or clear manually!";
+            return RedirectToAction("Index");
+        }
 
-            return View();
+        public ActionResult ClearIndexRecord(int id)
+        {
+            LuceneSearch.ClearLuceneIndexRecord(id);
+            TempData["Result"] = "Search index record was deleted successfully!";
+            return RedirectToAction("Index");
+        }
+
+        public ActionResult OptimizeIndex()
+        {
+            LuceneSearch.Optimize();
+            TempData["Result"] = "Search index was optimized successfully!";
+            return RedirectToAction("Index");
         }
     }
 }
