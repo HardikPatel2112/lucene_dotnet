@@ -54,15 +54,15 @@ namespace lu_search
 
         }
 
-        public static void AddUpdateLuceneIndex(IEnumerable<Student> sampleDatas)
+        public static void AddUpdateLuceneIndex(IEnumerable<Student> students)
         {
             // init lucene
             var analyzer = new StandardAnalyzer(Lucene.Net.Util.Version.LUCENE_30);
             using (var writer = new IndexWriter(_directory, analyzer, IndexWriter.MaxFieldLength.UNLIMITED))
             {
                 // add data to lucene search index (replaces older entry if any)
-                foreach (var sampleData in StudentData.GetStudents()) AddToLuceneIndex(sampleData, writer);
-
+                foreach (var student in StudentData.GetStudents())
+                    AddToLuceneIndex(student, writer);
                 // close handles
                 analyzer.Close();
                 writer.Dispose();
@@ -129,7 +129,7 @@ namespace lu_search
             {
                 Id = Convert.ToInt32(doc.Get("Id")),
                 Name = doc.Get("Name"),
-                Address = doc.Get("Description")
+                Address = doc.Get("Address")
             };
         }
         private static IEnumerable<Student> _mapLuceneToDataList(IEnumerable<Document> hits)
@@ -162,7 +162,7 @@ namespace lu_search
         {
             // validation
             if (string.IsNullOrEmpty(searchQuery.Replace("*", "").Replace("?", ""))) return new List<Student>();
-  
+
             // set up lucene searcher
             using (IndexSearcher searcher = new IndexSearcher(_directory, false))
             {
@@ -184,7 +184,7 @@ namespace lu_search
                 else
                 {
                     var parser = new MultiFieldQueryParser
-                        (Lucene.Net.Util.Version.LUCENE_30, new[] { "Id", "Name", "Description" }, analyzer);
+                        (Lucene.Net.Util.Version.LUCENE_30, new[] { "Id", "Name", "Address" }, analyzer);
                     var query = parseQuery(searchQuery, parser);
                     var hits = searcher.Search
                     (query, null, hits_limit, Sort.RELEVANCE).ScoreDocs;
