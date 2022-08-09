@@ -12,7 +12,6 @@ namespace lu_search.Controllers
 {
     public class HomeController : Controller
     {
-
         public ActionResult Index(string searchTerm, string searchField, bool? searchDefault, int? limit)
         {
             // create default Lucene search index directory
@@ -58,7 +57,7 @@ namespace lu_search.Controllers
             {
                 AllStudentData = allStudent,
                 SearchIndexData = _searchResults,
-                student = new Student { Id = 9, Name = "KKR", Address = "City in Texas" },
+                student = new Student(),                  //{ Id = 9, Name = "KKR", Address = "City in Texas" } for default value in input box
                 SearchFieldList = search_field_list,
             });
         }

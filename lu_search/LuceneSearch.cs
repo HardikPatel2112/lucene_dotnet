@@ -9,18 +9,16 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Web;
 
 namespace lu_search
-{
+{    
     public static class LuceneSearch
     {
-        public static string _luceneDir =
-        Path.Combine(Environment.CurrentDirectory, "lucene_index");
+        public static string _luceneDir = Path.Combine(Environment.CurrentDirectory, "lucene_index");
         public static FSDirectory _directoryTemp;
+        //lucene index directory where indexes are stored
         private static FSDirectory _directory
         {
-
             get
             {
                 if (_directoryTemp == null)
@@ -35,6 +33,30 @@ namespace lu_search
                 return _directoryTemp;
             }
         }
+
+        public static void AddUpdateLuceneIndex(Student student)
+        {
+            AddUpdateLuceneIndex(new List<Student> { student });
+        }
+        //controller post method redirects here to add index of all list in students
+        public static void AddUpdateLuceneIndex(IEnumerable<Student> students)
+        {
+            // init lucene
+            var analyzer = new StandardAnalyzer(Lucene.Net.Util.Version.LUCENE_30);
+            if (IndexWriter.IsLocked(_directoryTemp))
+                IndexWriter.Unlock(_directoryTemp);
+            using (var writer = new IndexWriter(_directory, analyzer, IndexWriter.MaxFieldLength.UNLIMITED))
+            {
+                    // add data to lucene search index (replaces older entry if any)
+                foreach (var student in students)
+                    AddToLuceneIndex(student, writer);
+                // close handles
+                analyzer.Close();
+                writer.Dispose();
+            }
+        }
+
+        //adds lucene index by obj of class and index writer for each obj in list
         private static void AddToLuceneIndex(Student student, IndexWriter writer)
         {
             // remove older index entry
@@ -54,25 +76,8 @@ namespace lu_search
 
         }
 
-        public static void AddUpdateLuceneIndex(IEnumerable<Student> students)
-        {
-            // init lucene
-            var analyzer = new StandardAnalyzer(Lucene.Net.Util.Version.LUCENE_30);
-            using (var writer = new IndexWriter(_directory, analyzer, IndexWriter.MaxFieldLength.UNLIMITED))
-            {
-                // add data to lucene search index (replaces older entry if any)
-                foreach (var student in StudentData.GetStudents())
-                    AddToLuceneIndex(student, writer);
-                // close handles
-                analyzer.Close();
-                writer.Dispose();
-            }
-        }
-        public static void AddUpdateLuceneIndex(Student student)
-        {
-            AddUpdateLuceneIndex(new List<Student> { student });
-        }
 
+        //remvoes index of perticuler id
         public static void ClearLuceneIndexRecord(int record_id)
         {
             // init lucene
@@ -97,7 +102,7 @@ namespace lu_search
                 var analyzer = new StandardAnalyzer(Lucene.Net.Util.Version.LUCENE_30);
                 using (var writer = new IndexWriter(_directory, analyzer, true, IndexWriter.MaxFieldLength.UNLIMITED))
                 {
-                    // remove older index entries
+                    // remove all index entries
                     writer.DeleteAll();
 
                     // close handles
@@ -156,8 +161,6 @@ namespace lu_search
             }
             return query;
         }
-
-
         private static IEnumerable<Student> _search(string searchQuery, string searchField = "")
         {
             // validation
@@ -166,7 +169,7 @@ namespace lu_search
             // set up lucene searcher
             using (IndexSearcher searcher = new IndexSearcher(_directory, false))
             {
-                var hits_limit = 1000;
+                var hits_limit = 2;
                 var analyzer = new StandardAnalyzer(Lucene.Net.Util.Version.LUCENE_30);
 
                 // search by single field
@@ -198,8 +201,9 @@ namespace lu_search
 
         public static IEnumerable<Student> Search(string input, string fieldName = "")
         {
-            if (string.IsNullOrEmpty(input)) return new List<Student>();
-
+            if (string.IsNullOrEmpty(input))
+                return new List<Student>();
+           
             var terms = input.Trim().Replace("-", " ").Split(' ')
                 .Where(x => !string.IsNullOrEmpty(x)).Select(x => x.Trim() + "*");
             input = string.Join(" ", terms);
